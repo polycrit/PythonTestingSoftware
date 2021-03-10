@@ -79,7 +79,7 @@ class CreateQuizGeneral ( wx.Frame ):
 		self.m_staticText2.Wrap( -1 )
 		bSizer3.Add( self.m_staticText2, 0, wx.ALL, 5 )
 		
-		self.m_slider1 = wx.Slider( self, wx.ID_ANY, 10, 1, 20, wx.DefaultPosition, wx.Size( 200,40 ), wx.SL_HORIZONTAL | wx.SL_LABELS)
+		self.m_slider1 = wx.Slider( self, wx.ID_ANY, 11, 2, 20, wx.DefaultPosition, wx.Size( 200,40 ), wx.SL_HORIZONTAL | wx.SL_LABELS)
 		bSizer3.Add( self.m_slider1, 0, wx.ALL, 5 )
 		
 		bSizer4 = wx.BoxSizer( wx.HORIZONTAL )
@@ -200,8 +200,15 @@ class QuestionCreateDefaultBlank ( wx.Frame ):
 		
 		self.SetSizer( bSizer5 )
 		self.Layout()
+		self.Bind( wx.EVT_CLOSE,  self.onClose)
 		
 		self.Centre( wx.BOTH )
+
+	def onClose(self, e):
+		dlg = wx.MessageBox("Ви точно хочете скасувати створення тесту?", "Увага", wx.YES_NO | wx.NO_DEFAULT | wx.ICON_WARNING, self)
+
+		if dlg == wx.YES:
+			wx.Exit()
 	
 	def encrypt( self, path, path_f ):
 		key = Fernet.generate_key()
@@ -244,7 +251,7 @@ class QuestionCreateDefaultBlank ( wx.Frame ):
 				print(frame2.questionsDatabase, self.answers)
 				for i in range(1, frame2.questionsNumber+1):
 					
-					if (frame2.questionsDatabase[i][1] == self.answers[i]+'\n'):
+					if (frame2.questionsDatabase[i][1] == self.answers[i]):
 						self.points += 1
 				wx.MessageBox("Кількість балів: " +  str(self.points), 'Тестування', wx.OK | wx.ICON_INFORMATION)
 				wx.Exit()
@@ -252,8 +259,12 @@ class QuestionCreateDefaultBlank ( wx.Frame ):
 
 		if (self.mode == 'c'):
 			if self.currentQuestionIndex + 1 in frame2.questionsDatabase:
+				self.m_textCtrl3.SetValue(frame2.questionsDatabase[self.currentQuestionIndex + 1][0])
+				self.m_textCtrl4.SetValue(frame2.questionsDatabase[self.currentQuestionIndex + 1][1])
 				self.m_button10.Disable()
 			else:
+				self.m_textCtrl3.SetValue('')
+				self.m_textCtrl4.SetValue('')
 				self.m_button10.Enable()
 		else:
 			if self.currentQuestionIndex + 1 in self.answers:
@@ -262,7 +273,7 @@ class QuestionCreateDefaultBlank ( wx.Frame ):
 				self.m_button10.Enable()
 
 		if (self.mode != 'c'):
-			self.m_textCtrl3.SetValue(frame2.questionsDatabase[self.currentQuestionIndex+1][0][:-1])
+			self.m_textCtrl3.SetValue(frame2.questionsDatabase[self.currentQuestionIndex+1][0])
 
 		if self.currentQuestionIndex == 1:
 			self.m_button8.Show()
@@ -276,8 +287,12 @@ class QuestionCreateDefaultBlank ( wx.Frame ):
 	def onPrev( self, event ):
 		if (self.mode == 'c'):
 			if self.currentQuestionIndex - 1 in frame2.questionsDatabase:
+				self.m_textCtrl3.SetValue(frame2.questionsDatabase[self.currentQuestionIndex - 1][0])
+				self.m_textCtrl4.SetValue(frame2.questionsDatabase[self.currentQuestionIndex - 1][1])
 				self.m_button10.Disable()
 			else:
+				self.m_textCtrl3.SetValue('')
+				self.m_textCtrl4.SetValue('')
 				self.m_button10.Enable()
 		else:
 			if self.currentQuestionIndex - 1 in self.answers:
@@ -286,7 +301,7 @@ class QuestionCreateDefaultBlank ( wx.Frame ):
 				self.m_button10.Enable()
 		
 		if (self.mode != 'c'):
-			self.m_textCtrl3.SetValue(frame2.questionsDatabase[self.currentQuestionIndex-1][0][:-1])
+			self.m_textCtrl3.SetValue(frame2.questionsDatabase[self.currentQuestionIndex-1][0])
 
 		if self.currentQuestionIndex == frame2.questionsNumber:
 			self.m_button9.SetLabel("Далі")
@@ -333,27 +348,26 @@ class QuestionCreateDefaultBlank ( wx.Frame ):
 			encrypted = enc_file.read() 
   
 		decrypted = fernet.decrypt(encrypted) 
-
-		with open(path1, 'wb') as dec_file: 
-			dec_file.write(decrypted)
+		f_decrypted = decrypted.decode('utf-8')
 		
 		frame2.questionsDatabase = {}
 
-		with open(path1, 'r') as f:
-			frame2.name = f.readline()
-			frame2.topic = f.readline()
-			frame2.questionsNumber = int(f.readline())
+		x = f_decrypted.splitlines()
+		print(x)
+		frame2.name = x[0]
+		frame2.topic = x[1]
+		frame2.questionsNumber = int(x[2])
 
-			for i in range(1, frame2.questionsNumber+1):
-				a1 = f.readline()
-				a2 = f.readline()
-				buf = []
-				buf.append(a1)
-				buf.append(a2)
-				frame2.questionsDatabase[i] = buf
+		for i in range(1, frame2.questionsNumber+1):
+			a1 = x[2*i+1]
+			a2 = x[2*(i+1)]
+			buf = []
+			buf.append(a1)
+			buf.append(a2)
+			frame2.questionsDatabase[i] = buf
 
 		self.m_textCtrl3.Disable()
-		self.m_textCtrl3.SetValue(frame2.questionsDatabase[1][0][:-1])
+		self.m_textCtrl3.SetValue(frame2.questionsDatabase[1][0])
 		self.m_textCtrl4.SetValue('')
 		self.currentQuestionIndex = 1
 		self.mode = 'p'
